@@ -37,6 +37,52 @@ export interface ExtensionManifestPlugin {
   generateBundle(this: {emitFile(file: {type: 'asset'; fileName: string; source: string}): void}): void;
 }
 
+export interface TurboWarpScratchBlockBoundary {
+  ArgumentType: Readonly<Record<string, string>>;
+  BlockType: Readonly<Record<string, string>>;
+}
+
+export interface TurboWarpBlockArgumentDefinition {
+  type: string;
+  defaultValue?: unknown;
+  menu?: string;
+}
+
+export interface TurboWarpBlockDefinition {
+  opcode: string;
+  blockType: string;
+  text: string;
+  arguments?: Readonly<Record<string, TurboWarpBlockArgumentDefinition>>;
+}
+
+export interface TurboWarpExtensionInfoSource {
+  id: string;
+  name: string;
+  blocks: readonly TurboWarpBlockDefinition[];
+  menus?: Readonly<Record<string, unknown>>;
+}
+
+export interface TurboWarpBlockDefinitionOptions {
+  hideFromPalette?: boolean;
+  disableReporterMonitors?: boolean;
+  decorateBlock?(
+    definition: TurboWarpBlockDefinition,
+    mapped: Readonly<Record<string, unknown>>
+  ): Readonly<Record<string, unknown>>;
+}
+
+export interface TurboWarpExtensionInfoOptions extends TurboWarpBlockDefinitionOptions {
+  blockIconURI?: string;
+  color1?: string;
+  color2?: string;
+  color3?: string;
+  description?: string;
+  docsURI?: string;
+  creator?: string;
+  license?: string;
+  credits?: string;
+}
+
 export function createExtensionManifest(id: string, definitions: unknown): ExtensionManifest {
   if (!/^[a-z0-9]+$/u.test(id)) {
     throw new TypeError('Extension manifest ID must contain only lowercase letters and numbers.');
@@ -66,6 +112,97 @@ export function createExtensionManifest(id: string, definitions: unknown): Exten
     blocks: blocks.sort((left, right) => compareIds(left.opcode, right.opcode)),
     menus
   };
+}
+
+export function createTurboWarpBlockDefinitions(
+  Scratch: TurboWarpScratchBlockBoundary,
+  definitions: readonly TurboWarpBlockDefinition[],
+  options: TurboWarpBlockDefinitionOptions = {}
+): ReadonlyArray<Readonly<Record<string, unknown>>> {
+  if (!isScratchBoundary(Scratch)) {
+    throw new TypeError('TurboWarp block definitions require ArgumentType and BlockType.');
+  }
+  if (!Array.isArray(definitions)) {
+    throw new TypeError('TurboWarp block definitions must be an array.');
+  }
+  if (typeof options !== 'object' || options === null || Array.isArray(options)) {
+    throw new TypeError('TurboWarp block definition options must be an object.');
+  }
+  const decorateBlock = options.decorateBlock;
+  if (decorateBlock !== undefined && typeof decorateBlock !== 'function') {
+    throw new TypeError('decorateBlock must be a function.');
+  }
+  const blocks = definitions.map((definition, index) => {
+    const source = normalizeRuntimeBlockDefinition(definition, index);
+    const blockType = Scratch.BlockType[source.blockType];
+    if (typeof blockType !== 'string') {
+      throw new TypeError(`Scratch.BlockType.${source.blockType} is required.`);
+    }
+    const mapped = {
+      opcode: source.opcode,
+      blockType,
+      text: source.text,
+      ...(options.hideFromPalette === true ? {hideFromPalette: true} : {}),
+      ...(options.disableReporterMonitors === true && source.blockType === 'REPORTER'
+        ? {disableMonitor: true}
+        : {}),
+      arguments: Object.fromEntries(
+        Object.entries(source.arguments ?? {}).map(([name, argument]) => {
+          const type = Scratch.ArgumentType[argument.type];
+          if (typeof type !== 'string') {
+            throw new TypeError(`Scratch.ArgumentType.${argument.type} is required.`);
+          }
+          return [
+            name,
+            {
+              type,
+              ...(argument.defaultValue === undefined ? {} : {defaultValue: argument.defaultValue}),
+              ...(argument.menu === undefined ? {} : {menu: argument.menu})
+            }
+          ];
+        })
+      )
+    };
+    return Object.freeze({
+      ...mapped,
+      ...(decorateBlock?.(source, mapped) ?? {})
+    });
+  });
+  return Object.freeze(blocks);
+}
+
+export function createTurboWarpExtensionInfo(
+  Scratch: TurboWarpScratchBlockBoundary,
+  source: TurboWarpExtensionInfoSource,
+  options: TurboWarpExtensionInfoOptions = {}
+): Readonly<Record<string, unknown>> {
+  const manifest = requireRecord(source, 'TurboWarp extension info source');
+  const id = requireNonEmptyString(manifest['id'], 'TurboWarp extension id');
+  const name = requireNonEmptyString(manifest['name'], 'TurboWarp extension name');
+  const blocks = manifest['blocks'];
+  if (!Array.isArray(blocks)) throw new TypeError('TurboWarp extension blocks must be an array.');
+  const optional = Object.fromEntries(
+    [
+      'blockIconURI',
+      'color1',
+      'color2',
+      'color3',
+      'description',
+      'docsURI',
+      'creator',
+      'license',
+      'credits'
+    ]
+      .map((key) => [key, options[key as keyof TurboWarpExtensionInfoOptions]])
+      .filter((entry): entry is [string, string] => typeof entry[1] === 'string')
+  );
+  return Object.freeze({
+    id,
+    name,
+    ...optional,
+    blocks: createTurboWarpBlockDefinitions(Scratch, blocks, options),
+    ...(manifest['menus'] === undefined ? {} : {menus: manifest['menus']})
+  });
 }
 
 export function serializeExtensionManifest(id: string, definitions: unknown): string {
@@ -132,11 +269,44 @@ function normalizeMenus(value: unknown): ExtensionManifestMenu[] {
     .sort((left, right) => compareIds(left.id, right.id));
 }
 
+function normalizeRuntimeBlockDefinition(value: unknown, index: number): TurboWarpBlockDefinition {
+  const block = requireRecord(value, `TurboWarp block at index ${index}`);
+  const opcode = requireNonEmptyString(block['opcode'], `TurboWarp block at index ${index} opcode`);
+  const blockType = requireNonEmptyString(block['blockType'], `TurboWarp block ${opcode} blockType`);
+  const text = requireNonEmptyString(block['text'], `TurboWarp block ${opcode} text`);
+  const sourceArguments = block['arguments'] ?? {};
+  const argumentRecord = requireRecord(sourceArguments, `TurboWarp block ${opcode} arguments`);
+  const arguments_: Record<string, TurboWarpBlockArgumentDefinition> = {};
+  for (const [name, argument] of Object.entries(argumentRecord)) {
+    requireNonEmptyString(name, `TurboWarp block ${opcode} argument ID`);
+    const definition = requireRecord(argument, `TurboWarp block ${opcode} argument ${name}`);
+    const type = requireNonEmptyString(definition['type'], `TurboWarp block ${opcode} argument ${name} type`);
+    const menu = definition['menu'];
+    if (menu !== undefined && typeof menu !== 'string') {
+      throw new TypeError(`TurboWarp block ${opcode} argument ${name} menu must be a string.`);
+    }
+    arguments_[name] = {
+      type,
+      ...(definition['defaultValue'] === undefined ? {} : {defaultValue: definition['defaultValue']}),
+      ...(menu === undefined ? {} : {menu})
+    };
+  }
+  return {opcode, blockType, text, arguments: arguments_};
+}
+
 function requireRecord(value: unknown, label: string): Record<string, unknown> {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     throw new TypeError(`${label} must be an object.`);
   }
   return value as Record<string, unknown>;
+}
+
+function isScratchBoundary(value: unknown): value is TurboWarpScratchBlockBoundary {
+  return isRecord(value) && isRecord(value['ArgumentType']) && isRecord(value['BlockType']);
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 function requireNonEmptyString(value: unknown, label: string): string {

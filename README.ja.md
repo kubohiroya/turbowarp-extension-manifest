@@ -12,34 +12,48 @@ TurboWarp extension repository が template から manifest code をコピーせ
 - opcode重複とmenu参照を検証する。
 - stable key orderでmanifestをserializeする。
 - `turbowarp-extension-template` と同じ JSON Schema を再利用する。
+- manifest風のblock定義をTurboWarp `getInfo()`用block定義へ変換し、Scratch type mapping codeのコピーを避ける。
 
 ## 例
 
 ```ts
 import {
+  createTurboWarpExtensionInfo,
   createExtensionManifest,
   serializeExtensionManifest
 } from '@kubohiroya/turbowarp-extension-manifest';
 
-const manifest = createExtensionManifest('example3d', {
+const definitions = {
   blocks: [
     {
       opcode: 'status',
       blockType: 'REPORTER',
+      text: 'extension status',
       arguments: {}
     }
   ]
-});
+};
 
-const source = serializeExtensionManifest('example3d', {
-    blocks: [
-      {
-        opcode: 'status',
-        blockType: 'REPORTER',
-        arguments: {}
-      }
-    ]
-});
+const manifest = createExtensionManifest('example3d', definitions);
+const source = serializeExtensionManifest('example3d', definitions);
+
+class ExampleExtension {
+  constructor(Scratch) {
+    this.Scratch = Scratch;
+  }
+
+  getInfo() {
+    return createTurboWarpExtensionInfo(
+      this.Scratch,
+      {id: 'example3d', name: 'Example 3D', blocks: definitions.blocks},
+      {disableReporterMonitors: true}
+    );
+  }
+
+  status() {
+    return 'ready';
+  }
+}
 ```
 
 ## 開発
