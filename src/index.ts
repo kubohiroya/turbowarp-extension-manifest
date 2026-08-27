@@ -24,6 +24,19 @@ export interface ExtensionManifest {
   menus: ExtensionManifestMenu[];
 }
 
+export interface ExtensionManifestPluginOptions {
+  id: string;
+  definitions: unknown;
+  fileName?: string;
+}
+
+export interface ExtensionManifestPlugin {
+  name: 'extension-api-manifest';
+  apply: 'build';
+  enforce: 'post';
+  generateBundle(this: {emitFile(file: {type: 'asset'; fileName: string; source: string}): void}): void;
+}
+
 export function createExtensionManifest(id: string, definitions: unknown): ExtensionManifest {
   if (!/^[a-z0-9]+$/u.test(id)) {
     throw new TypeError('Extension manifest ID must contain only lowercase letters and numbers.');
@@ -57,6 +70,23 @@ export function createExtensionManifest(id: string, definitions: unknown): Exten
 
 export function serializeExtensionManifest(id: string, definitions: unknown): string {
   return `${JSON.stringify(createExtensionManifest(id, definitions), null, 2)}\n`;
+}
+
+export function extensionManifestPlugin(
+  options: ExtensionManifestPluginOptions
+): ExtensionManifestPlugin {
+  return {
+    name: 'extension-api-manifest',
+    apply: 'build',
+    enforce: 'post',
+    generateBundle() {
+      this.emitFile({
+        type: 'asset',
+        fileName: options.fileName ?? 'extension-manifest.json',
+        source: serializeExtensionManifest(options.id, options.definitions)
+      });
+    }
+  };
 }
 
 function normalizeBlock(

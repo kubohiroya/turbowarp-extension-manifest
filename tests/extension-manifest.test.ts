@@ -3,6 +3,7 @@ import schema from '../schemas/extension-manifest.schema.json' with {type: 'json
 import {
   createExtensionManifest,
   EXTENSION_MANIFEST_FORMAT_VERSION,
+  extensionManifestPlugin,
   serializeExtensionManifest
 } from '../src/index.js';
 import expectedManifest from './fixtures/extension-manifest.json' with {type: 'json'};
@@ -45,5 +46,26 @@ describe('extension API manifest', () => {
         ]
       })
     ).toThrow('references unknown menu: missing');
+  });
+
+  it('provides the Vite plugin contract used by turbowarp-extension-template', () => {
+    const emitted: unknown[] = [];
+    const plugin = extensionManifestPlugin({
+      id: sourceFixture.id,
+      definitions: sourceFixture.definitions,
+      fileName: 'api.json'
+    });
+    plugin.generateBundle.call({
+      emitFile(file) {
+        emitted.push(file);
+      }
+    });
+    expect(emitted).toEqual([
+      {
+        type: 'asset',
+        fileName: 'api.json',
+        source: `${JSON.stringify(expectedManifest, null, 2)}\n`
+      }
+    ]);
   });
 });
