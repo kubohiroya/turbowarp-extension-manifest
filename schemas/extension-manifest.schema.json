@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/kubohiroya/turbowarp-extension-manifest/schemas/extension-manifest.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "id", "blocks", "menus"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "id": {"type": "string", "pattern": "^[a-z0-9]+$"},
+    "blocks": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/block"}
+    },
+    "menus": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/menu"}
+    }
+  },
+  "$defs": {
+    "block": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["opcode", "blockType", "arguments"],
+      "properties": {
+        "opcode": {"type": "string", "minLength": 1},
+        "blockType": {"type": "string", "minLength": 1},
+        "arguments": {
+          "type": "array",
+          "items": {"$ref": "#/$defs/argument"}
+        }
+      }
+    },
+    "argument": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "type"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "type": {"type": "string", "minLength": 1},
+        "menu": {"type": "string", "minLength": 1}
+      }
+    },
+    "menu": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "acceptReporters"],
+      "properties": {
+        "id": {"type": "string", "minLength": 1},
+        "acceptReporters": {"type": "boolean"}
+      }
+    }
+  }
+}
