@@ -1,15 +1,71 @@
 export const EXTENSION_MANIFEST_FORMAT_VERSION = 1 as const;
 
+export const EXTENSION_MANIFEST_FORMAT_VERSIONS = [1, 2] as const;
+
+export type ExtensionManifestFormatVersion = (typeof EXTENSION_MANIFEST_FORMAT_VERSIONS)[number];
+
+/**
+ * Format version 2 adds the metadata a server-side compiler needs to lower a block into its own IR.
+ *
+ * The vocabularies below are the ones `turbowarp-http-server`'s compiler manifest reader accepts, so
+ * a manifest this package emits at version 2 is one that reader can parse. Keep them in step: a value
+ * added here that the reader rejects produces an extension no server can compile.
+ */
+export const EXTENSION_MANIFEST_RESULT_TYPES = [
+  'json',
+  'boolean',
+  'number',
+  'string',
+  'void',
+  // A string whose content is serialized JSON or YAML, which `string` alone would not record.
+  'jsonText',
+  'yamlText'
+] as const;
+
+export const EXTENSION_MANIFEST_EFFECTS = [
+  'pure',
+  'immutable',
+  'control',
+  'request-read',
+  'response-write',
+  'storage-read',
+  'storage-write',
+  'binary-read',
+  'binary-write',
+  'state'
+] as const;
+
+export type ExtensionManifestResultType = (typeof EXTENSION_MANIFEST_RESULT_TYPES)[number];
+
+export type ExtensionManifestEffect = (typeof EXTENSION_MANIFEST_EFFECTS)[number];
+
+export interface ExtensionManifestServer {
+  supported: boolean;
+  /** Required when `supported` is true; the operation name the server lowers this block to. */
+  irOperation?: string;
+}
+
 export interface ExtensionManifestArgument {
   id: string;
   type: string;
   menu?: string;
+  /** Version 2 only. */
+  normalizesTo?: 'pathSegments';
+  staticLiteral?: boolean;
+  minimum?: number;
+  maximum?: number;
 }
 
 export interface ExtensionManifestBlock {
   opcode: string;
   blockType: string;
   arguments: ExtensionManifestArgument[];
+  /** Version 2 only, and then all five are required. */
+  resultType?: ExtensionManifestResultType;
+  effect?: ExtensionManifestEffect;
+  immutable?: boolean;
+  errors?: string[];
+  server?: ExtensionManifestServer;
 }
 
 export interface ExtensionManifestMenu {
@@ -17,14 +73,43 @@ export interface ExtensionManifestMenu {
   acceptReporters: boolean;
 }
 
+export interface ExtensionManifestPathSegmentType {
+  kind: 'discriminatedUnion';
+  variants: {kind: string; valueType: string}[];
+}
+
+export interface ExtensionManifestDataReferenceType {
+  kind: string;
+  scope: string;
+  lifetime: string;
+  valueType: string;
+}
+
 export interface ExtensionManifest {
-  formatVersion: typeof EXTENSION_MANIFEST_FORMAT_VERSION;
+  formatVersion: ExtensionManifestFormatVersion;
   id: string;
+  /** Version 2 only: how a compiler should read the path arguments this extension takes. */
+  pathSegmentType?: ExtensionManifestPathSegmentType;
+  /** Version 2 only: what the values this extension hands out refer to, and for how long. */
+  dataReferenceType?: ExtensionManifestDataReferenceType;
   blocks: ExtensionManifestBlock[];
   menus: ExtensionManifestMenu[];
 }
 
-export interface ExtensionManifestPluginOptions {
+export interface CreateExtensionManifestOptions {
+  /** Defaults to 1. Version 2 requires compiler metadata on every block. */
+  formatVersion?: ExtensionManifestFormatVersion;
+  /**
+   * Version 2 block metadata keyed by opcode, merged over each block definition.
+   *
+   * Block definitions are bundled into the extension JavaScript, so metadata added there would ship
+   * to every project that loads the extension even though only the build reads it. Keeping it in a
+   * separate build-time file and passing it here leaves the bundle untouched.
+   */
+  blockMetadata?: Readonly<Record<string, unknown>>;
+}
+
+export interface ExtensionManifestPluginOptions extends CreateExtensionManifestOptions {
   id: string;
   definitions: unknown;
   fileName?: string;
@@ -83,9 +168,20 @@ export interface TurboWarpExtensionInfoOptions extends TurboWarpBlockDefinitionO
   credits?: string;
 }
 
-export function createExtensionManifest(id: string, definitions: unknown): ExtensionManifest {
+export function createExtensionManifest(
+  id: string,
+  definitions: unknown,
+  options: CreateExtensionManifestOptions = {}
+): ExtensionManifest {
   if (!/^[a-z0-9]+$/u.test(id)) {
     throw new TypeError('Extension manifest ID must contain only lowercase letters and numbers.');
+  }
+
+  const formatVersion = options.formatVersion ?? EXTENSION_MANIFEST_FORMAT_VERSION;
+  if (!EXTENSION_MANIFEST_FORMAT_VERSIONS.includes(formatVersion)) {
+    throw new TypeError(
+      `Unsupported extension manifest format version: ${String(formatVersion)}. Supported: ${EXTENSION_MANIFEST_FORMAT_VERSIONS.join(', ')}.`
+    );
   }
 
   const source = requireRecord(definitions, 'Block definitions');
@@ -98,7 +194,13 @@ export function createExtensionManifest(id: string, definitions: unknown): Exten
   const menuIds = new Set(menus.map((menu) => menu.id));
   const seenOpcodes = new Set<string>();
   const blocks = sourceBlocks.map((block, index) => {
-    const normalized = normalizeBlock(block, index, menuIds);
+    const normalized = normalizeBlock(
+      block,
+      index,
+      menuIds,
+      formatVersion,
+      options.blockMetadata
+    );
     if (seenOpcodes.has(normalized.opcode)) {
       throw new TypeError(`Duplicate block opcode: ${normalized.opcode}`);
     }
@@ -107,11 +209,51 @@ export function createExtensionManifest(id: string, definitions: unknown): Exten
   });
 
   return {
-    formatVersion: EXTENSION_MANIFEST_FORMAT_VERSION,
+    formatVersion,
     id,
+    ...(formatVersion === 1 ? {} : extensionTypes(source)),
     blocks: blocks.sort((left, right) => compareIds(left.opcode, right.opcode)),
     menus
   };
+}
+
+function extensionTypes(source: Record<string, unknown>): Partial<ExtensionManifest> {
+  const types: Partial<ExtensionManifest> = {};
+  const pathSegmentType = source['pathSegmentType'];
+  if (pathSegmentType !== undefined) {
+    const record = requireRecord(pathSegmentType, 'pathSegmentType');
+    if (record['kind'] !== 'discriminatedUnion') {
+      throw new TypeError('pathSegmentType kind must be discriminatedUnion.');
+    }
+    const variants = record['variants'];
+    if (!Array.isArray(variants) || variants.length === 0) {
+      throw new TypeError('pathSegmentType variants must be a non-empty array.');
+    }
+    types.pathSegmentType = {
+      kind: 'discriminatedUnion',
+      variants: variants.map((variant, index) => {
+        const entry = requireRecord(variant, `pathSegmentType variants[${index}]`);
+        return {
+          kind: requireNonEmptyString(entry['kind'], `pathSegmentType variants[${index}] kind`),
+          valueType: requireNonEmptyString(
+            entry['valueType'],
+            `pathSegmentType variants[${index}] valueType`
+          )
+        };
+      })
+    };
+  }
+  const dataReferenceType = source['dataReferenceType'];
+  if (dataReferenceType !== undefined) {
+    const record = requireRecord(dataReferenceType, 'dataReferenceType');
+    types.dataReferenceType = {
+      kind: requireNonEmptyString(record['kind'], 'dataReferenceType kind'),
+      scope: requireNonEmptyString(record['scope'], 'dataReferenceType scope'),
+      lifetime: requireNonEmptyString(record['lifetime'], 'dataReferenceType lifetime'),
+      valueType: requireNonEmptyString(record['valueType'], 'dataReferenceType valueType')
+    };
+  }
+  return types;
 }
 
 export function createTurboWarpBlockDefinitions(
@@ -205,8 +347,12 @@ export function createTurboWarpExtensionInfo(
   });
 }
 
-export function serializeExtensionManifest(id: string, definitions: unknown): string {
-  return `${JSON.stringify(createExtensionManifest(id, definitions), null, 2)}\n`;
+export function serializeExtensionManifest(
+  id: string,
+  definitions: unknown,
+  options: CreateExtensionManifestOptions = {}
+): string {
+  return `${JSON.stringify(createExtensionManifest(id, definitions, options), null, 2)}\n`;
 }
 
 export function extensionManifestPlugin(
@@ -220,7 +366,10 @@ export function extensionManifestPlugin(
       this.emitFile({
         type: 'asset',
         fileName: options.fileName ?? 'extension-manifest.json',
-        source: serializeExtensionManifest(options.id, options.definitions)
+        source: serializeExtensionManifest(options.id, options.definitions, {
+          ...(options.formatVersion === undefined ? {} : {formatVersion: options.formatVersion}),
+          ...(options.blockMetadata === undefined ? {} : {blockMetadata: options.blockMetadata})
+        })
       });
     }
   };
@@ -229,10 +378,17 @@ export function extensionManifestPlugin(
 function normalizeBlock(
   value: unknown,
   index: number,
-  menuIds: ReadonlySet<string>
+  menuIds: ReadonlySet<string>,
+  formatVersion: ExtensionManifestFormatVersion,
+  blockMetadata: Readonly<Record<string, unknown>> | undefined
 ): ExtensionManifestBlock {
-  const block = requireRecord(value, `Block at index ${index}`);
-  const opcode = requireNonEmptyString(block['opcode'], `Block at index ${index} opcode`);
+  const definition = requireRecord(value, `Block at index ${index}`);
+  const opcode = requireNonEmptyString(definition['opcode'], `Block at index ${index} opcode`);
+  const extra = blockMetadata?.[opcode];
+  const block =
+    extra === undefined
+      ? definition
+      : {...definition, ...requireRecord(extra, `Block ${opcode} metadata`)};
   const blockType = requireNonEmptyString(block['blockType'], `Block ${opcode} blockType`);
   const sourceArguments = block['arguments'] ?? {};
   const argumentRecord = requireRecord(sourceArguments, `Block ${opcode} arguments`);
@@ -244,14 +400,119 @@ function normalizeBlock(
     if (menu !== undefined && (typeof menu !== 'string' || !menuIds.has(menu))) {
       throw new TypeError(`Block ${opcode} argument ${argumentId} references unknown menu: ${menu}`);
     }
-    return menu === undefined ? {id: argumentId, type} : {id: argumentId, type, menu};
+    const base: ExtensionManifestArgument =
+      menu === undefined ? {id: argumentId, type} : {id: argumentId, type, menu};
+    return formatVersion === 1
+      ? base
+      : withArgumentConstraints(base, definition, `Block ${opcode} argument ${argumentId}`);
   });
 
-  return {
+  const normalized: ExtensionManifestBlock = {
     opcode,
     blockType,
     arguments: argumentsList.sort((left, right) => compareIds(left.id, right.id))
   };
+  // Version 1 emits nothing beyond the three keys, so a repository that pins version 1 keeps its
+  // existing manifest byte for byte even when its block definitions already carry version 2 metadata.
+  return formatVersion === 1 ? normalized : withCompilerMetadata(normalized, block);
+}
+
+/**
+ * Version 2 requires all five metadata fields on every block. Accepting a block that carries only
+ * some of them would emit a manifest the compiler rejects wholesale, so demand them here instead.
+ */
+function withCompilerMetadata(
+  block: ExtensionManifestBlock,
+  definition: Record<string, unknown>
+): ExtensionManifestBlock {
+  const label = `Block ${block.opcode}`;
+  for (const key of ['resultType', 'effect', 'immutable', 'errors', 'server'] as const) {
+    if (definition[key] === undefined) {
+      throw new TypeError(`${label} must declare ${key} for format version 2.`);
+    }
+  }
+
+  const resultType = requireEnum(
+    definition['resultType'],
+    EXTENSION_MANIFEST_RESULT_TYPES,
+    `${label} resultType`
+  );
+  const effect = requireEnum(definition['effect'], EXTENSION_MANIFEST_EFFECTS, `${label} effect`);
+  const immutable = definition['immutable'];
+  if (typeof immutable !== 'boolean') {
+    throw new TypeError(`${label} immutable must be a boolean.`);
+  }
+  const rawErrors = definition['errors'];
+  if (!Array.isArray(rawErrors)) {
+    throw new TypeError(`${label} errors must be an array.`);
+  }
+  // Error codes stay in their declared order: they read as a documented list, not a set.
+  const errors = rawErrors.map((error, errorIndex) =>
+    requireNonEmptyString(error, `${label} errors[${errorIndex}]`)
+  );
+
+  return {...block, resultType, effect, immutable, errors, server: normalizeServer(definition['server'], label)};
+}
+
+function normalizeServer(value: unknown, label: string): ExtensionManifestServer {
+  const server = requireRecord(value, `${label} server`);
+  const supported = server['supported'];
+  if (typeof supported !== 'boolean') {
+    throw new TypeError(`${label} server.supported must be a boolean.`);
+  }
+  const irOperation = server['irOperation'];
+  if (irOperation === undefined) {
+    if (supported) {
+      throw new TypeError(`${label} server.irOperation is required when supported is true.`);
+    }
+    return {supported};
+  }
+  return {supported, irOperation: requireNonEmptyString(irOperation, `${label} server.irOperation`)};
+}
+
+function withArgumentConstraints(
+  argument: ExtensionManifestArgument,
+  definition: Record<string, unknown>,
+  label: string
+): ExtensionManifestArgument {
+  const normalizesTo = definition['normalizesTo'];
+  if (normalizesTo !== undefined && normalizesTo !== 'pathSegments') {
+    throw new TypeError(`${label} normalizesTo must be pathSegments.`);
+  }
+  const staticLiteral = definition['staticLiteral'];
+  if (staticLiteral !== undefined && typeof staticLiteral !== 'boolean') {
+    throw new TypeError(`${label} staticLiteral must be a boolean.`);
+  }
+  return {
+    ...argument,
+    ...(normalizesTo === undefined ? {} : {normalizesTo}),
+    ...(staticLiteral === undefined ? {} : {staticLiteral}),
+    ...requireOptionalFiniteNumber(definition['minimum'], 'minimum', label),
+    ...requireOptionalFiniteNumber(definition['maximum'], 'maximum', label)
+  };
+}
+
+function requireOptionalFiniteNumber(
+  value: unknown,
+  key: 'minimum' | 'maximum',
+  label: string
+): Record<string, number> {
+  if (value === undefined) return {};
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    throw new TypeError(`${label} ${key} must be a finite number.`);
+  }
+  return {[key]: value};
+}
+
+function requireEnum<T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+  label: string
+): T {
+  if (typeof value !== 'string' || !allowed.includes(value as T)) {
+    throw new TypeError(`${label} must be one of: ${allowed.join(', ')}.`);
+  }
+  return value as T;
 }
 
 function normalizeMenus(value: unknown): ExtensionManifestMenu[] {
