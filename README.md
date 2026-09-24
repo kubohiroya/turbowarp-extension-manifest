@@ -49,6 +49,9 @@ import blockMetadata from './src/block-metadata.json' with {type: 'json'};
 extensionManifestPlugin({id: extensionConfig.id, definitions, blockMetadata, formatVersion: 2});
 ```
 
+A caller that builds the map in TypeScript rather than reading it from JSON can type each entry as
+`ExtensionManifestBlockMetadata`.
+
 Passing no `formatVersion` emits exactly what version 1 emitted before, even when the block
 definitions already carry version 2 metadata, so a repository can adopt this package without its
 published manifest changing.

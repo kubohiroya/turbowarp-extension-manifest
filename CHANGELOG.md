@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.1
+
+- Export `ExtensionManifestBlockMetadata`, the version 2 metadata of one block as `blockMetadata`
+  carries it. The block type models those fields as optional, since a version 1 block has none of
+  them, so a caller building the map otherwise had to write
+  `Required<Pick<ExtensionManifestBlock, ...>>` itself. `blockMetadata` itself stays typed as
+  `unknown` per opcode: the metadata usually arrives from a JSON import, which TypeScript widens to
+  `string`, and every field is validated at run time regardless.
+
+
 ## 0.3.0
 
 - Add extension API manifest format version 2, which carries the metadata a server-side compiler

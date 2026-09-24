@@ -68,6 +68,17 @@ export interface ExtensionManifestBlock {
   server?: ExtensionManifestServer;
 }
 
+/**
+ * The version 2 metadata of one block, as `blockMetadata` carries it.
+ *
+ * The block type models these as optional, because a version 1 block has none of them. A caller
+ * building the `blockMetadata` map needs them all, so it gets its own type rather than having to
+ * write `Required<Pick<ExtensionManifestBlock, ...>>` itself.
+ */
+export type ExtensionManifestBlockMetadata = Required<
+  Pick<ExtensionManifestBlock, 'effect' | 'errors' | 'immutable' | 'resultType' | 'server'>
+>;
+
 export interface ExtensionManifestMenu {
   id: string;
   acceptReporters: boolean;
@@ -106,6 +117,9 @@ export interface CreateExtensionManifestOptions {
    * to every project that loads the extension even though only the build reads it. Keeping it in a
    * separate build-time file and passing it here leaves the bundle untouched.
    */
+  // Deliberately not typed as ExtensionManifestBlockMetadata: the metadata usually arrives from a
+  // JSON import, which TypeScript widens to `string`, and every field is validated at run time
+  // anyway. The exported type is there for callers that build the map in TypeScript.
   blockMetadata?: Readonly<Record<string, unknown>>;
 }
 
