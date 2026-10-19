@@ -1,6 +1,6 @@
 {
   "name": "@kubohiroya/turbowarp-extension-manifest",
-  "version": "0.3.1",
+  "version": "0.3.2",
   "description": "Reusable manifest contract utilities extracted from turbowarp-extension-template.",
   "author": "Hiroya Kubo <hiroya@cuc.ac.jp>",
   "license": "MPL-2.0",
@@ -58,5 +58,11 @@
     "extension",
     "manifest",
     "template"
-  ]
+  ],
+  "gitHead": "ad80c984c1d6ebc6fbee5ddf4f893d142ddb5a21",
+  "x-turbowarp-source": {
+    "revision": "ad80c984c1d6ebc6fbee5ddf4f893d142ddb5a21",
+    "revisionRole": "base-commit",
+    "sourceState": "working-tree-release-overlay"
+  }
 }
