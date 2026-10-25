@@ -1,6 +1,6 @@
 # turbowarp-extension-manifest
 
-[日本語](README.ja.md)
+English | [日本語](README.ja.md)
 
 `@kubohiroya/turbowarp-extension-manifest` provides the extension manifest contract used by `turbowarp-extension-template`.
 
