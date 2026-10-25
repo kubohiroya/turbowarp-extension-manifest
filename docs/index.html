@@ -1,5 +1,13 @@
 <!doctype html>
-<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Extension Manifest — library documentation</title><link rel="canonical" href="https://kubohiroya.github.io/turbowarp-extension-manifest/"><style>body{font-family:system-ui,sans-serif;line-height:1.7;max-width:70rem;margin:auto;padding:1.5rem;color:#18212b;background:#fafbfc}nav{display:flex;gap:1rem;flex-wrap:wrap}pre{overflow:auto;background:#edf1f5;padding:1rem}table{border-collapse:collapse;width:100%}th,td{border:1px solid #b8c2cc;padding:.6rem;text-align:left}a{color:#064ba5}section{scroll-margin-top:1rem}code{overflow-wrap:anywhere}</style></head><body>
+<html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Extension Manifest — library documentation</title><link rel="canonical" href="https://kubohiroya.github.io/turbowarp-extension-manifest/"><style>body{font-family:system-ui,sans-serif;line-height:1.7;max-width:70rem;margin:auto;padding:1.5rem;color:#18212b;background:#fafbfc}nav{display:flex;gap:1rem;flex-wrap:wrap}pre{overflow:auto;background:#edf1f5;padding:1rem}table{border-collapse:collapse;width:100%}th,td{border:1px solid #b8c2cc;padding:.6rem;text-align:left}a{color:#064ba5}section{scroll-margin-top:1rem}code{overflow-wrap:anywhere}
+:root{color-scheme:light dark}
+@media (prefers-color-scheme:dark){
+  body{color:#e5e9f0;background:#11151b}
+  pre{background:#1b2029}
+  th,td{border-color:#2d3540}
+  a{color:#7fb3f0}
+}
+</style></head><body>
 <header><h1>Extension Manifest</h1><p><code>@kubohiroya/turbowarp-extension-manifest@0.3.2</code></p><nav aria-label="Documentation"><a href="#scope">責務</a><a href="#usage">使い方</a><a href="#api">API</a><a href="#schemas">Schema</a><a href="#guides">関連文書</a></nav></header>
 <main><section id="scope"><h2>責務と公開範囲</h2><p>Templateから抽出した、拡張API manifestの生成・検証・serializeとgetInfo用block定義変換を共通化するlibraryです。拡張ブロックそのものは登録しません。</p><p>このページはlibraryのドキュメントです。TurboWarp拡張の独立したpaletteやブロックは提供しません。</p></section>
 <section id="usage"><h2>使い方</h2><p>公開済みの完全固定versionを使います。</p><pre><code>npm install --save-exact @kubohiroya/turbowarp-extension-manifest@0.3.2</code></pre><pre><code>import {createExtensionManifest, serializeExtensionManifest}
