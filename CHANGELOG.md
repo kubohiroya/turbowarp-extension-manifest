@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.4.0
+
+- 現在のmainに統合済みのmanifest契約をファミリー全体の依存収束に合わせて公開する。
+
 ## 0.3.1
 
 - Export `ExtensionManifestBlockMetadata`, the version 2 metadata of one block as `blockMetadata`
