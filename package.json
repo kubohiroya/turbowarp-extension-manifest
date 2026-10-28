@@ -1,8 +1,12 @@
 {
   "name": "@kubohiroya/turbowarp-extension-manifest",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Reusable manifest contract utilities extracted from turbowarp-extension-template.",
-  "author": "Hiroya Kubo <hiroya@cuc.ac.jp>",
+  "author": {
+    "name": "Hiroya Kubo",
+    "email": "hiroya@cuc.ac.jp",
+    "url": "https://github.com/kubohiroya"
+  },
   "license": "MPL-2.0",
   "type": "module",
   "sideEffects": false,
