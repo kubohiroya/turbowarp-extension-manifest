@@ -1,0 +1,274 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kubohiroya.github.io/turbowarp-extension-manifest/schemas/resource-declaration.schema.json",
+  "title": "Extension resource declaration",
+  "description": "Author-declared behaviour of the extension entry, not a permission grant. Missing metadata differs from an empty resources array.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "resources"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "resources": {
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "$ref": "#/$defs/resource"
+      },
+      "allOf": [
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "camera"
+              }
+            }
+          },
+          "minContains": 0,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "microphone"
+              }
+            }
+          },
+          "minContains": 0,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "network"
+              }
+            }
+          },
+          "minContains": 0,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "bluetooth"
+              }
+            }
+          },
+          "minContains": 0,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "usb"
+              }
+            }
+          },
+          "minContains": 0,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "storage"
+              }
+            }
+          },
+          "minContains": 0,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "files"
+              }
+            }
+          },
+          "minContains": 0,
+          "maxContains": 1
+        },
+        {
+          "contains": {
+            "type": "object",
+            "required": [
+              "type"
+            ],
+            "properties": {
+              "type": {
+                "const": "audio-output"
+              }
+            }
+          },
+          "minContains": 0,
+          "maxContains": 1
+        }
+      ]
+    }
+  },
+  "$defs": {
+    "text": {
+      "type": "object",
+      "required": [
+        "en"
+      ],
+      "minProperties": 1,
+      "maxProperties": 12,
+      "propertyNames": {
+        "pattern": "^[a-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$"
+      },
+      "additionalProperties": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 500,
+        "pattern": "\\S"
+      }
+    },
+    "resource": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "usage",
+        "purpose"
+      ],
+      "properties": {
+        "type": {
+          "enum": [
+            "camera",
+            "microphone",
+            "network",
+            "bluetooth",
+            "usb",
+            "storage",
+            "files",
+            "audio-output"
+          ]
+        },
+        "usage": {
+          "enum": [
+            "required",
+            "conditional"
+          ]
+        },
+        "purpose": {
+          "$ref": "#/$defs/text"
+        },
+        "condition": {
+          "$ref": "#/$defs/text"
+        },
+        "access": {
+          "enum": [
+            "use",
+            "permission-request"
+          ]
+        },
+        "via": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "maxLength": 214,
+            "pattern": "^(?:@[a-z0-9][a-z0-9._-]*/)?[a-z0-9][a-z0-9._-]*$"
+          }
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "direction",
+            "content"
+          ],
+          "properties": {
+            "direction": {
+              "enum": [
+                "download",
+                "upload",
+                "bidirectional"
+              ]
+            },
+            "content": {
+              "$ref": "#/$defs/text"
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "usage": {
+                "const": "conditional"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "condition"
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "network"
+              }
+            }
+          },
+          "then": {
+            "required": [
+              "data"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "data"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  }
+}
