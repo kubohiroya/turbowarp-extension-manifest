@@ -106,3 +106,17 @@ corepack enable
 pnpm install --frozen-lockfile
 pnpm run check
 ```
+
+## Resource declarations
+
+An extension declares its own resource use in `package.json` at `turbowarpExtension.resourceDeclaration`. The existing `./resources` export validates it without executing extension code; `./resource-declaration.schema.json` exposes the JSON Schema.
+
+```json
+{"turbowarpExtension":{"resourceDeclaration":{"schemaVersion":1,"resources":[{"type":"camera","usage":"conditional","purpose":{"en":"Read QR frames","ja":"QR映像を読む"},"condition":{"en":"When scanning","ja":"撮影する場合"},"via":["@kubohiroya/turbowarp-camera-source"]}]}}}
+```
+
+The vocabulary is `camera`, `microphone`, `network`, `bluetooth`, `usb`, `storage`, `files`, and `audio-output`. `usage: required` means the main feature needs it; `conditional` requires a localized `condition`. `purpose` and `condition` require English and may contain other locales. Network entries require `data.direction` (`download`, `upload`, `bidirectional`) and localized `data.content`. `access: permission-request` distinguishes a chooser that requests a resource then immediately releases it; explain that treatment in `purpose`. `via` records the packages through which a resource is used.
+
+Missing metadata means undeclared. `resources: []` is an explicit declaration for this version. Neither state proves safety. Declarations describe the canonical extension entry, not companion apps, CLI-generated programs or all exported library helpers. Update them with changes in behaviour. Shared camera consumers declare camera use even when another extension obtains browser permission. Loading the extension or its gallery artwork alone does not count as runtime network use. In-memory project values do not count as persistent browser storage.
+
+The dashboard, add screen and project-open review consume the same versioned declaration. It never grants permission or starts a device. Removing the optional field preserves older consumers. Roll back consumers before removing the new API; retain old manifest v1/v2 bytes and release immutable new package versions.

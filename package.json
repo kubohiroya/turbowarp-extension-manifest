@@ -1,6 +1,6 @@
 {
   "name": "@kubohiroya/turbowarp-extension-manifest",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Reusable manifest contract utilities extracted from turbowarp-extension-template.",
   "author": {
     "name": "Hiroya Kubo",
@@ -25,7 +25,12 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./resources": {
+      "types": "./dist/resources.d.ts",
+      "import": "./dist/resources.js"
+    },
+    "./resource-declaration.schema.json": "./schemas/resource-declaration.schema.json"
   },
   "files": [
     "dist/",
@@ -54,7 +59,8 @@
   },
   "devDependencies": {
     "typescript": "^5.9.3",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.10",
+    "ajv": "8.20.0"
   },
   "keywords": [
     "turbowarp",
