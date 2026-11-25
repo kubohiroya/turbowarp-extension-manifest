@@ -1,4 +1,7 @@
 import {describe, expect, it} from 'vitest';
+import {Ajv2020} from 'ajv/dist/2020.js';
+import schema from '../schemas/extension-package.schema.json' with {type: 'json'};
+import resourceSchema from '../schemas/resource-declaration.schema.json' with {type: 'json'};
 import {assertDistributionApi, parseExtensionDistribution} from '../src/distribution.js';
 
 const artifact = {size: 12, sha256: '1'.repeat(64)};
@@ -26,6 +29,13 @@ describe('distribution metadata', () => {
     ['unknown execution mode', {execution: 'trusted'}, 'INVALID_DESCRIPTOR'],
   ])('rejects %s', (_label, patch, code) => {
     expect(() => parseExtensionDistribution({...distribution, ...patch})).toThrow(expect.objectContaining({code}));
+  });
+
+  it('publishes a JSON Schema which agrees on valid and invalid distribution paths', () => {
+    const ajv = new Ajv2020({strict: true, strictRequired: false});
+    const validate = ajv.addSchema(resourceSchema).compile(schema);
+    expect(validate(distribution)).toBe(true);
+    expect(validate({...distribution, bundle: {...artifact, file: '../sample.js'}})).toBe(false);
   });
 
   it('rejects a manifest belonging to another extension', () => {
