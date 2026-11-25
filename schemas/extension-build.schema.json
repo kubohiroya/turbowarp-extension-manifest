@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://kubohiroya.github.io/turbowarp-extension-manifest/schemas/extension-build.schema.json",
+  "title": "Standard TurboWarp TypeScript extension build",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["formatVersion", "profile", "entry", "settings", "blocks", "lockfile", "dependencies"],
+  "properties": {
+    "formatVersion": {"const": 1},
+    "profile": {"const": "turbowarp-typescript-v1"},
+    "entry": {"const": "src/index.ts"},
+    "settings": {"const": "src/extension-config.json"},
+    "blocks": {"const": "src/block-definitions.json"},
+    "lockfile": {"const": "pnpm-lock.yaml"},
+    "dependencies": {"const": "none"}
+  }
+}
