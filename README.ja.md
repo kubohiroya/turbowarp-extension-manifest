@@ -82,3 +82,16 @@ pnpm run check
 表示名と説明、ライセンス、実行方式、リソース宣言、同じディレクトリ内の JS と
 ブロック API manifest のファイル名・バイト数・SHA-256 を記録します。利用側は取得元を
 別に記録し、実ファイルを照合します。リソース宣言とハッシュは実行の承認を与えません。
+
+## 標準ソースビルドの宣言
+
+ソースリポジトリのルートにある `extension-build.json` を
+`@kubohiroya/turbowarp-extension-manifest/build-profile` の
+`parseExtensionBuildProfile` で読みます。`turbowarp-typescript-v1` は入口、
+設定 JSON、ブロック定義、lockfile の位置を固定します。`dependencies: "none"` は
+ホストのレシピに npm 依存の解決・インストールを要求しない指定です。lockfile は
+開発者自身のビルドの出所を記録するために参照します。
+
+`parseExtensionBuildSettings` は `src/extension-config.json` にある拡張 ID、
+表示情報、実行方式を検査します。これらの API は静的データの検証を行います。
+ホストの実行環境と拡張の実行承認は別途必要です。

@@ -1,6 +1,6 @@
 {
   "name": "@kubohiroya/turbowarp-extension-manifest",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Reusable manifest contract utilities extracted from turbowarp-extension-template.",
   "author": {
     "name": "Hiroya Kubo",
@@ -36,7 +36,13 @@
       "import": "./dist/distribution.js",
       "default": "./dist/distribution.js"
     },
-    "./extension-package.schema.json": "./schemas/extension-package.schema.json"
+    "./extension-package.schema.json": "./schemas/extension-package.schema.json",
+    "./build-profile": {
+      "types": "./dist/build-profile.d.ts",
+      "import": "./dist/build-profile.js",
+      "default": "./dist/build-profile.js"
+    },
+    "./extension-build.schema.json": "./schemas/extension-build.schema.json"
   },
   "files": [
     "dist/",
