@@ -231,6 +231,67 @@ export function createExtensionManifest(
   };
 }
 
+/** Read an API manifest using the same vocabulary and invariants as the writer. */
+export function parseExtensionManifest(value: unknown): ExtensionManifest {
+  const source = requireRecord(value, 'API manifest');
+  const formatVersion = source['formatVersion'];
+  if (formatVersion !== 1 && formatVersion !== 2) {
+    throw new TypeError('Unsupported API manifest format version.');
+  }
+  const compilerFields = ['resultType', 'effect', 'immutable', 'errors', 'server'];
+  manifestRecord(source, ['formatVersion', 'id', 'blocks', 'menus'],
+    formatVersion === 2 ? ['pathSegmentType', 'dataReferenceType'] : []);
+  const entries = (value: unknown, required: string[], optional: string[] = []) => {
+    if (!Array.isArray(value)) throw new TypeError('Manifest entries must be an array.');
+    const seen = new Set<string>();
+    return value.map(item => {
+      const record = manifestRecord(item, required, optional);
+      const id = requireNonEmptyString(record['id'], 'Manifest entry ID');
+      if (seen.has(id)) throw new TypeError('Duplicate manifest entry: ' + id);
+      seen.add(id);
+      return [id, record] as const;
+    });
+  };
+  const menus = Object.fromEntries(entries(source['menus'], ['id', 'acceptReporters'])
+    .map(([id, menu]) => {
+      if (typeof menu['acceptReporters'] !== 'boolean') throw new TypeError('Invalid acceptReporters.');
+      return [id, {acceptReporters: menu['acceptReporters']}];
+    }));
+  if (!Array.isArray(source['blocks'])) throw new TypeError('Manifest blocks must be an array.');
+  const blocks = source['blocks'].map(value => {
+    const block = manifestRecord(value,
+      ['opcode', 'blockType', 'arguments', ...(formatVersion === 2 ? compilerFields : [])]);
+    const args = entries(block['arguments'], ['id', 'type'], formatVersion === 2
+      ? ['menu', 'normalizesTo', 'staticLiteral', 'minimum', 'maximum'] : ['menu']);
+    if (formatVersion === 2) {
+      manifestRecord(block['server'], ['supported'], ['irOperation']);
+    }
+    return {...block, arguments: Object.fromEntries(args.map(([id, argument]) => {
+      const {id: _id, ...definition} = argument;
+      return [id, definition];
+    }))};
+  });
+  if (source['pathSegmentType'] !== undefined) {
+    const path = manifestRecord(source['pathSegmentType'], ['kind', 'variants']);
+    if (!Array.isArray(path['variants'])) throw new TypeError('Invalid path variants.');
+    path['variants'].forEach(value => manifestRecord(value, ['kind', 'valueType']));
+  }
+  if (source['dataReferenceType'] !== undefined) {
+    manifestRecord(source['dataReferenceType'], ['kind', 'scope', 'lifetime', 'valueType']);
+  }
+  return createExtensionManifest(requireNonEmptyString(source['id'], 'Manifest ID'),
+    {...source, blocks, menus}, {formatVersion});
+}
+
+function manifestRecord(value: unknown, required: string[], optional: string[] = []): Record<string, unknown> {
+  const record = requireRecord(value, 'Manifest object');
+  if (required.some(key => !Object.hasOwn(record, key)) ||
+      Object.keys(record).some(key => !required.includes(key) && !optional.includes(key))) {
+    throw new TypeError('Missing or unexpected API manifest field.');
+  }
+  return record;
+}
+
 function extensionTypes(source: Record<string, unknown>): Partial<ExtensionManifest> {
   const types: Partial<ExtensionManifest> = {};
   const pathSegmentType = source['pathSegmentType'];

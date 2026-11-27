@@ -16,7 +16,7 @@ describe('distribution metadata', () => {
   it('reads the same static contract in npm and Release directories', () => {
     expect(parseExtensionDistribution(JSON.parse(JSON.stringify(distribution)))).toEqual(distribution);
     expect(() => assertDistributionApi(parseExtensionDistribution(distribution),
-      {id: 'sample', formatVersion: 1, blocks: []})).not.toThrow();
+      {id: 'sample', formatVersion: 1, blocks: [], menus: []})).not.toThrow();
   });
 
   it.each([

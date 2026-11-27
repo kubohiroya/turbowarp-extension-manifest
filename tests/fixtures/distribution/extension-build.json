@@ -1,0 +1,9 @@
+{
+  "formatVersion": 1,
+  "profile": "turbowarp-typescript-v1",
+  "entry": "src/index.ts",
+  "settings": "src/extension-config.json",
+  "blocks": "src/block-definitions.json",
+  "lockfile": "pnpm-lock.yaml",
+  "dependencies": "none"
+}
