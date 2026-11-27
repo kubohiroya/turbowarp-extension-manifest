@@ -120,3 +120,13 @@ The vocabulary is `camera`, `microphone`, `network`, `bluetooth`, `usb`, `storag
 Missing metadata means undeclared. `resources: []` is an explicit declaration for this version. Neither state proves safety. Declarations describe the canonical extension entry, not companion apps, CLI-generated programs or all exported library helpers. Update them with changes in behaviour. Shared camera consumers declare camera use even when another extension obtains browser permission. Loading the extension or its gallery artwork alone does not count as runtime network use. In-memory project values do not count as persistent browser storage.
 
 The dashboard, add screen and project-open review consume the same versioned declaration. It never grants permission or starts a device. Removing the optional field preserves older consumers. Roll back consumers before removing the new API; retain old manifest v1/v2 bytes and release immutable new package versions.
+
+## Distribution verification
+
+The `./distribution` export provides `createExtensionDistribution`, `verifyExtensionDistribution`,
+`assertDistributionPackage`, and `assertDistributionSettings` for generating static descriptors,
+verifying artifact sizes and SHA-256, and checking canonical metadata. The root export also provides
+`parseExtensionManifest` for API manifest v1/v2, sharing validation with the existing writer.
+Both Node and browsers use the same code without executing extension bundles or configuration modules.
+See the [distribution and fixed build contract](docs/distribution-contract.ja.md) for layouts,
+examples, diagnostic codes, fixtures, host responsibilities, and rollback.

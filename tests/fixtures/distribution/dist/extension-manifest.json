@@ -1,0 +1,12 @@
+{
+  "formatVersion": 1,
+  "id": "sample",
+  "blocks": [
+    {
+      "opcode": "status",
+      "blockType": "REPORTER",
+      "arguments": []
+    }
+  ],
+  "menus": []
+}

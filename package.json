@@ -51,7 +51,8 @@
     "README.md",
     "README.ja.md",
     "CHANGELOG.md",
-    "LICENSE"
+    "LICENSE",
+    "docs/distribution-contract.ja.md"
   ],
   "publishConfig": {
     "access": "public",

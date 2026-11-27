@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- 配布descriptorの生成、実バイト列のサイズ・SHA-256照合、package/静的設定との整合検証を追加。
+- API manifest v1/v2のreaderを既存writerの検証に接続し、不正な構造・重複・参照を拒否。writer出力は維持。
+- npm・Release・repo・localの共通fixture、Node/browser再生テスト、診断と切り戻しの文書を追加。
+
 ## 0.8.0 - 2026-11-25
 
 - 標準 TypeScript ソースビルドの固定プロファイルと JSON 設定の共有検証を追加しました。

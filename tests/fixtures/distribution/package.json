@@ -1,0 +1,26 @@
+{
+  "name": "@independent-author/sample",
+  "version": "1.4.0",
+  "license": "MPL-2.0",
+  "turbowarpExtension": {
+    "resourceDeclaration": {
+      "schemaVersion": 1,
+      "resources": [
+        {
+          "type": "storage",
+          "usage": "conditional",
+          "purpose": {
+            "en": "Save preferences",
+            "ja": "設定を保存"
+          },
+          "condition": {
+            "en": "When the user saves preferences"
+          }
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "postinstall": "throw-if-executed"
+  }
+}

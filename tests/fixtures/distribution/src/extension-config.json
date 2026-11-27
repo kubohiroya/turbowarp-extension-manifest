@@ -1,0 +1,11 @@
+{
+  "id": "sample",
+  "slug": "sample",
+  "name": "Sample",
+  "description": "Example extension",
+  "author": "Independent author",
+  "license": "MPL-2.0",
+  "unsandboxed": false,
+  "docsURI": "https://example.test/sample",
+  "blockIconURI": "data:image/svg+xml;base64,PHN2Zz4="
+}

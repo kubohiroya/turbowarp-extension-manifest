@@ -1,0 +1,36 @@
+[
+  {
+    "kind": "npm",
+    "root": "package/",
+    "descriptor": "dist/extension-package.json",
+    "observed": {
+      "package": "@independent-author/sample",
+      "version": "1.4.0"
+    }
+  },
+  {
+    "kind": "release",
+    "root": "release/",
+    "descriptor": "dist/extension-package.json",
+    "observed": {
+      "assetId": 123,
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    }
+  },
+  {
+    "kind": "repo",
+    "root": "checkout/",
+    "descriptor": "dist/extension-package.json",
+    "observed": {
+      "resolvedCommit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  },
+  {
+    "kind": "local",
+    "root": "development/",
+    "descriptor": "dist/extension-package.json",
+    "observed": {
+      "sessionId": "host-owned-fixture"
+    }
+  }
+]

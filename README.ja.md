@@ -95,3 +95,8 @@ pnpm run check
 `parseExtensionBuildSettings` は `src/extension-config.json` にある拡張 ID、
 表示情報、実行方式を検査します。これらの API は静的データの検証を行います。
 ホストの実行環境と拡張の実行承認は別途必要です。
+
+配布成果物の生成・SHA-256照合・正本との整合検証、共通fixture、診断コード、取得元ごとの
+root規則は[配布・標準ビルド契約](docs/distribution-contract.ja.md)を参照してください。
+`./distribution` の `createExtensionDistribution` と `verifyExtensionDistribution` は
+Node・ブラウザーで同じ静的データとバイト列を扱い、拡張コードを実行しません。

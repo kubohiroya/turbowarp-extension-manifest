@@ -1,0 +1,36 @@
+{
+  "formatVersion": 1,
+  "id": "sample",
+  "package": "@independent-author/sample",
+  "version": "1.4.0",
+  "name": "Sample",
+  "description": "Example extension",
+  "license": "MPL-2.0",
+  "execution": "sandboxed",
+  "resources": {
+    "schemaVersion": 1,
+    "resources": [
+      {
+        "type": "storage",
+        "usage": "conditional",
+        "purpose": {
+          "en": "Save preferences",
+          "ja": "設定を保存"
+        },
+        "condition": {
+          "en": "When the user saves preferences"
+        }
+      }
+    ]
+  },
+  "bundle": {
+    "file": "sample.js",
+    "size": 115,
+    "sha256": "8d9386acc5eb6142df1075727dacac0222361b9b4d6f8ef23a3a0f225333d4d9"
+  },
+  "api": {
+    "file": "extension-manifest.json",
+    "size": 168,
+    "sha256": "d109111e2aabe38be3eb14c95a5a7925832a6fb6103092b9e4cb7f19ca3c1d3f"
+  }
+}
