@@ -38,7 +38,7 @@ export interface DistributionBytes {
 }
 
 export class DistributionError extends Error {
-  constructor(readonly code: DistributionErrorCode, message: string, options?: ErrorOptions) {
+  constructor(readonly code: string, message: string, options?: ErrorOptions) {
     super(message, options);
     this.name = 'DistributionError';
   }

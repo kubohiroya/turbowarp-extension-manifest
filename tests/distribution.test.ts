@@ -1,8 +1,8 @@
-import {describe, expect, it} from 'vitest';
+import {describe, expect, expectTypeOf, it} from 'vitest';
 import {Ajv2020} from 'ajv/dist/2020.js';
 import schema from '../schemas/extension-package.schema.json' with {type: 'json'};
 import resourceSchema from '../schemas/resource-declaration.schema.json' with {type: 'json'};
-import {assertDistributionApi, parseExtensionDistribution} from '../src/distribution.js';
+import {DistributionError, assertDistributionApi, parseExtensionDistribution} from '../src/distribution.js';
 
 const artifact = {size: 12, sha256: '1'.repeat(64)};
 const distribution = {
@@ -13,6 +13,11 @@ const distribution = {
 };
 
 describe('distribution metadata', () => {
+  it('keeps downstream diagnostic codes supported by the public error types', () => {
+    expectTypeOf(DistributionError).constructorParameters.toEqualTypeOf<[string, string, ErrorOptions?]>();
+    expectTypeOf<DistributionError['code']>().toEqualTypeOf<string>();
+  });
+
   it('reads the same static contract in npm and Release directories', () => {
     expect(parseExtensionDistribution(JSON.parse(JSON.stringify(distribution)))).toEqual(distribution);
     expect(() => assertDistributionApi(parseExtensionDistribution(distribution),

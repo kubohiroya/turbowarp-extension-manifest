@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.9.1 - 2026-11-28
+
+- DistributionError の constructor と code を従来の string に戻し、sb3-toolchain など利用側の独自診断コードの型互換性を修正。既知の診断コード一覧 DistributionErrorCode と実行時の挙動は維持します。
+
 ## 0.9.0 - 2026-11-28
 
 - 配布descriptorの生成、実バイト列のサイズ・SHA-256照合、package/静的設定との整合検証を追加。
