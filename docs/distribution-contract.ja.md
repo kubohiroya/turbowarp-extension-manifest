@@ -77,6 +77,9 @@ assertDistributionApi は従来の ID 比較に加えて必須フィールド、
 
 ## 構造化診断
 
+`DistributionErrorCode` は本パッケージが発行する既知のコード一覧です。利用側の独自診断も同じクラスで表せるよう、
+`DistributionError` の constructor の `code` 引数と公開 `code` プロパティは従来どおり `string` を受け付けます。
+
 | error.code | 拒否する条件 |
 | --- | --- |
 | UNSUPPORTED_DESCRIPTOR | 未対応の配布契約版 |

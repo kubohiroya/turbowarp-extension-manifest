@@ -1,6 +1,6 @@
 {
   "name": "@kubohiroya/turbowarp-extension-manifest",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "description": "Reusable manifest contract utilities extracted from turbowarp-extension-template.",
   "author": {
     "name": "Hiroya Kubo",
