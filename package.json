@@ -1,6 +1,6 @@
 {
   "name": "@kubohiroya/turbowarp-extension-manifest",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "Reusable manifest contract utilities extracted from turbowarp-extension-template.",
   "author": {
     "name": "Hiroya Kubo",
@@ -81,11 +81,5 @@
     "extension",
     "manifest",
     "template"
-  ],
-  "gitHead": "c753096b2c03fd1be4c20bc3f64f8b8fb2ebc77d",
-  "x-turbowarp-source": {
-    "revision": "c753096b2c03fd1be4c20bc3f64f8b8fb2ebc77d",
-    "revisionRole": "base-commit",
-    "sourceState": "working-tree-release-overlay"
-  }
+  ]
 }
